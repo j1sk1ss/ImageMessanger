@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мессенджер</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="login-screen" id="loginScreen">
+        <h2>Вход</h2>
+        <input type="password" id="password" placeholder="Введите пароль">
+        <button id="loginButton" onclick="auth()">Войти</button>
+    </div>
+
+    <div class="messenger-container" id="messengerContainer" style="display: none;">
+        <button id="toggleContacts" class="toggle-contacts">≡</button>
+        <aside class="contacts" id="contactsAside">
+            <h3>Контакты</h3>
+            <ul id="contactsList">
+            </ul>
+            <button id="addContactButton">Добавить контакт</button>
+        </aside>
+
+        <div id="addContactInterface" style="display: none;">
+            <h3>Добавить контакт</h3>
+            <input type="text" id="newContactNickname" placeholder="Введите никнейм контакта">
+            <button id="confirmAddContactButton" onclick="addContact()">Добавить</button>
+            <button id="cancelAddContactButton">Отмена</button>
+        </div>
+
+        <section class="chat" id="chatSection">
+            <div class="chat-header">
+                <h3 id="chatTitle">Выберите контакт</h3>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+            </div>
+
+            <div class="chat-input">
+                <div class="message-container">
+                    <textarea id="messageInput" placeholder="Введите сообщение"></textarea>
+                </div>
+                <div class="encryption-input">
+                    <input type="text" id="encryptKeyInput" placeholder="Введите код шифрования">
+                </div>
+                <div class="actions">
+                    <div class="image-upload">
+                        <input type="file" id="imageInput" accept="image/*">
+                        <label for="imageInput" class="upload-button" id="fileNameLabel">Загрузить изображение</label>
+                        <img id="imagePreview" src="" alt="MiniPhoto" style="display:none; width: 50px; height: auto; margin-top: 10px;">
+                    </div>                    
+                    <button id="sendMessageButton" class="send-button">Отправить</button>
+                </div>                              
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function openAddContactInterface() {
+            document.getElementById("addContactInterface").style.display = 'block';
+        }
+
+        function closeAddContactInterface() {
+            document.getElementById("addContactInterface").style.display = 'none';
+        }
+
+        document.getElementById("addContactButton").addEventListener("click", openAddContactInterface);
+        document.getElementById("cancelAddContactButton").addEventListener("click", closeAddContactInterface);
+
+        function toggleContacts() {
+            const contacts = document.getElementById("contactsAside");
+            const chat = document.getElementById("chatSection");
+            if (contacts.style.display === "none" || contacts.style.display === "") {
+                contacts.style.display = "block";
+                chat.style.display = "none";
+            } else {
+                contacts.style.display = "none";
+                chat.style.display = "block";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const toggleContactsButton = document.getElementById("toggleContacts");
+            if (toggleContactsButton) {
+                toggleContactsButton.addEventListener("click", toggleContacts);
+            } else {
+                console.error("Не найден элемент с ID 'toggleContacts'");
+            }
+
+            toggleContacts();
+        });
+    </script>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
