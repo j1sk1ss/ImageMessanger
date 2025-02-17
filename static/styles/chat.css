@@ -20,7 +20,7 @@
     flex-grow: 1;
     overflow-y: auto;
     margin-bottom: 20px;
-    height: calc(80vh - 40px); /* 100% от высоты экрана минус отступы */
+    height: calc(75vh - 40px); /* 100% от высоты экрана минус отступы */
     width: 100%;
     box-sizing: border-box;
 }

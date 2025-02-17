@@ -1,65 +1,16 @@
-function encryptMessage(message, key) {
-    return CryptoJS.AES.encrypt(message, key).toString();
-}
+import { encryptMessage, decryptMessage, encryptImage, decryptImage } from './utils/crypto.js';
+import { formatTime } from './utils/date.js';
 
 
-function decryptMessage(encryptedMessage, key) {
-    try {
-        if (!encryptedMessage) {
-            return "Нет сообщения для дешифровки";
-        }
-
-        const decryptedMessage = CryptoJS.AES.decrypt(encryptedMessage, key).toString(CryptoJS.enc.Utf8);
-        if (decryptedMessage) {
-            return decryptedMessage;
-        } else {
-            return "Ошибка дешифровки";
-        }
-    } catch (error) {
-        console.error("Ошибка дешифровки:", error);
-        return "Ошибка дешифровки";
-    }
-}
-
-
-function encryptImage(imageFile, key) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            let imageBase64 = event.target.result;
-            imageBase64 = imageBase64.split(',')[1];
-            const encryptedImage = CryptoJS.AES.encrypt(imageBase64, key).toString();
-            resolve(encryptedImage);
-        };
-        reader.onerror = function(error) {
-            reject("Ошибка при чтении файла изображения: " + error);
-        };
-        reader.readAsDataURL(imageFile);
-    });
-}
-
-
-function decryptImage(encryptedImage, key) {
-    try {
-        const decryptedBytes = CryptoJS.AES.decrypt(encryptedImage, key);
-        const decryptedBase64 = decryptedBytes.toString(CryptoJS.enc.Utf8);
-        if (!decryptedBase64) throw new Error("Ошибка дешифровки: данные пустые.");
-        const byteArray = Uint8Array.from(atob(decryptedBase64), c => c.charCodeAt(0));
-        return new Blob([byteArray], { type: 'image/jpeg' });
-    } catch (error) {
-        console.error("Ошибка дешифровки:", error);
-        return null;
-    }
-}
-
-
-async function auth() {
+window.auth = async function () {
     const loginScreen = document.getElementById("loginScreen");
     const messengerContainer = document.getElementById("messengerContainer");
+    const usernameInput = document.getElementById("username");
+    const username = usernameInput.value.trim();
     const passwordInput = document.getElementById("password");
     const password = passwordInput.value.trim();
-    if (password === "") {
-        alert("Введите пароль!");
+    if (password === "" || username === "") {
+        alert("Введите пароль и имя!");
         return;
     }
 
@@ -67,7 +18,7 @@ async function auth() {
         const response = await fetch("/auth", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ password:password, username:username })
         });
 
         const data = await response.json();
@@ -75,7 +26,6 @@ async function auth() {
             throw new Error(data.message || "Ошибка авторизации");
         }
 
-        const username = data.username;
         const access_key = data.key;
         localStorage.setItem("username", username);
         localStorage.setItem("access_key", access_key);
@@ -90,13 +40,41 @@ async function auth() {
 }
 
 
-async function openChat(contact) {
-    document.getElementById("chatTitle").textContent = contact;
-    const chatMessages = document.getElementById("chatMessages");
-    const chat = document.getElementById("chatSection");
-    chat.style.display = "block";
-    chatMessages.innerHTML = "";
-    fetchMessages();
+window.register = async function () {
+    const loginScreen = document.getElementById("loginScreen");
+    const messengerContainer = document.getElementById("messengerContainer");
+    const usernameInput = document.getElementById("username");
+    const username = usernameInput.value.trim();
+    const passwordInput = document.getElementById("password");
+    const password = passwordInput.value.trim();
+    if (password === "" || username === "") {
+        alert("Введите пароль и имя!");
+        return;
+    }
+
+    try {
+        const response = await fetch("/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password:password, username:username })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || "Ошибка авторизации");
+        }
+
+        const access_key = data.key;
+        localStorage.setItem("username", username);
+        localStorage.setItem("access_key", access_key);
+
+        loginScreen.style.display = "none";
+        messengerContainer.style.display = "flex";
+
+        loadContacts();
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 
@@ -150,7 +128,7 @@ async function loadContacts() {
 }
 
 
-async function addContact() {
+window.addContact = async function () {
     const contact = document.getElementById("newContactNickname").value;
     const username = localStorage.getItem("username");
     const accessKey = localStorage.getItem("access_key");
@@ -225,9 +203,49 @@ async function removeContact(contact) {
 }
 
 
-function formatTime(time) {
-    const date = new Date(time);
-    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+let page = 0;
+
+
+async function openChat(contact) {
+    document.getElementById("chatTitle").textContent = contact;
+    const chatMessages = document.getElementById("chatMessages");
+    const chat = document.getElementById("chatSection");
+    chat.style.display = "block";
+    
+    page = 0;
+    const images = chatMessages.getElementsByTagName('img');
+    for (let image of images) {
+        URL.revokeObjectURL(image.src);
+    }
+    
+    chatMessages.innerHTML = "";
+    fetchMessages();
+}
+
+
+window.nextPage = async function () {
+    const images = chatMessages.getElementsByTagName('img');
+    for (let image of images) {
+        URL.revokeObjectURL(image.src); 
+    }
+
+    page++;
+    chatMessages.innerHTML = "";
+    fetchMessages();
+}
+
+
+window.prevPage = async function () {
+    if (page > 0) {
+        const images = chatMessages.getElementsByTagName('img');
+        for (let image of images) {
+            URL.revokeObjectURL(image.src);
+        }
+
+        page--;
+        chatMessages.innerHTML = "";
+        fetchMessages();
+    }
 }
 
 
@@ -237,44 +255,50 @@ async function fetchMessages() {
     const sender = document.getElementById('chatTitle').textContent;
     const user = localStorage.getItem("username");
 
-    const response = await fetch(`/messages?receiver=${user}&sender=${sender}`, {
-        method: 'GET',
-        headers: {
-            "Authorization": accessKey
-        }
-    });
-    
-    const data = await response.json();
-    for (const message of data.messages) {
-        const messageId = `${message.from}-${message.time}`;
-        if (document.getElementById(messageId)) {
-            continue;
-        }
-
-        let imageFile = null;
-        let msg = "";
-
-        if (message.message) {
-            msg = decryptMessage(message.message, encryptionKey);
-        }
-
-        if (message.image) {
-            try {
-                const imageResponse = await fetch(message.image);
-                const encryptedImage = await imageResponse.text();
-                const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
-                
-                if (decryptedBlob) {
-                    imageFile = decryptedBlob;
-                } else {
-                    console.error("Ошибка при дешифровке изображения");
+    try {
+        const response = await fetch(
+            `/messages?receiver=${user}&sender=${sender}&offset=${7 * page}&limit=7`, 
+            {
+                method: 'GET',
+                headers: {
+                    "Authorization": accessKey
                 }
-            } catch (error) {
-                console.error("Ошибка при загрузке изображения:", error);
             }
-        }
+        );
+        
+        const data = await response.json();
+        for (const message of data.messages) {
+            const messageId = `${message.from}-${message.time}`;
+            if (document.getElementById(messageId)) {
+                continue;
+            }
 
-        displayMessage(messageId, message.from, msg, message.time, imageFile);
+            let imageFile = null;
+            let msg = "";
+
+            if (message.message) {
+                msg = decryptMessage(message.message, encryptionKey);
+            }
+
+            if (message.image) {
+                try {
+                    const imageResponse = await fetch(message.image);
+                    const encryptedImage = await imageResponse.text();
+                    const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
+                    if (decryptedBlob) {
+                        imageFile = decryptedBlob;
+                    } else {
+                        console.error("Ошибка при дешифровке изображения");
+                    }
+                } catch (error) {
+                    console.error("Ошибка при загрузке изображения:", error);
+                }
+            }
+
+            displayMessage(messageId, message.from, msg, message.time, imageFile);
+        }
+    } catch (error) {
+        console.error("Ошибка при загрузке сообщений:", error);
     }
 }
 
@@ -300,6 +324,9 @@ function displayMessage(messageId, sender, encryptedMessage, time, imageData) {
         messageImage.src = URL.createObjectURL(imageData);
         messageImage.classList.add('message-image');
         messageContainer.appendChild(messageImage);
+        messageImage.onload = () => {
+            URL.revokeObjectURL(messageImage.src);
+        };
     }
 
     chatMessages.appendChild(messageContainer);
@@ -308,7 +335,7 @@ function displayMessage(messageId, sender, encryptedMessage, time, imageData) {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    setInterval(fetchMessages, 5000);
+    setInterval(fetchMessages, 2500);
 
     function sendMessageToServer(encryptedMessage, sender, receiver, imageData) {
         const accessKey = localStorage.getItem("access_key");
@@ -353,6 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     
         sendMessageToServer(encryptedMessage, sender, receiver, encryptedImage);
+        
+        fileInput.value = '';
+        document.getElementById('imagePreview').style.display = "none";
+        document.getElementById("fileNameLabel").textContent = "Загрузить изображение";
     });
 
     document.getElementById("imageInput").addEventListener("change", function(event) {
@@ -372,5 +403,5 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById("imagePreview").style.display = "none";
             document.getElementById("fileNameLabel").textContent = "Загрузить изображение";
         }
-    });    
+    });
 });

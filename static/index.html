@@ -8,12 +8,17 @@
     <link rel="stylesheet" href="/static/styles/mobile.css">
     <link rel="stylesheet" href="/static/styles/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script type="module" src="/static/utils/crypto.js"></script>
+    <script type="module" src="/static/utils/date.js"></script>
+    <script type="module" src="/static/app.js"></script>
 </head>
 <body>
     <div class="login-screen" id="loginScreen">
         <h2>Вход</h2>
+        <input type="text" id="username" placeholder="Введите имя">
         <input type="password" id="password" placeholder="Введите пароль">
         <button id="loginButton" onclick="auth()">Войти</button>
+        <button id="loginButton" onclick="register()">Регистрация</button>
     </div>
 
     <div class="messenger-container" id="messengerContainer" style="display: none;">
@@ -54,6 +59,10 @@
                         <img id="imagePreview" src="" alt="MiniPhoto" style="display:none; width: 50px; height: auto; margin-top: 10px;">
                     </div>                    
                     <button id="sendMessageButton" class="send-button">Отправить</button>
+                    <div class="pagination-buttons">
+                        <button id="prevPageButton" onclick="prevPage()">←</button>
+                        <button id="nextPageButton" onclick="nextPage()">→</button>
+                    </div>
                 </div>                              
             </div>
         </section>
@@ -94,7 +103,5 @@
             toggleContacts();
         });
     </script>
-
-    <script src="/static/app.js"></script>
 </body>
 </html>

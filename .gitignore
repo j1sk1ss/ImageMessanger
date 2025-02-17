@@ -1,5 +1,6 @@
 /__pycache__
-/static/uploads
+/common/__pycache__
+/static/data/
 *.json
 *.pyc
 *.txt

@@ -17,7 +17,8 @@ from common.contacts import (
 from common.auth import (
     verify_pass,
     generate_access_key,
-    verify_access_key
+    verify_access_key,
+    add_key
 )
 
 from flask_cors import CORS
@@ -63,11 +64,12 @@ def _auth_user():
     if not data:
         return 400, "No data provided"
     
+    username: str | None = data.get("username", None)
     password: str | None = data.get("password", None)
-    if not password:
-        return 400, "Password not provided"
+    if not username or not password:
+        return 400, "Password and username not provided"
     
-    login_data: tuple = verify_pass(password=password)
+    login_data: tuple = verify_pass(username=username, password=password)
     if not login_data[0] or not login_data[1]:
         return 404, "User not found"
     
@@ -75,6 +77,26 @@ def _auth_user():
         "username": login_data[1],
         "key": generate_access_key(username=login_data[1], userpass=login_data[0])
     }
+
+
+@app.route('/register', methods=['POST'])
+def _register_user():
+    data: dict = request.json
+    if not data:
+        return 400, "No data provided"
+    
+    username: str | None = data.get("username", None)
+    password: str | None = data.get("password", None)
+    if not username or not password:
+        return 400, "Password and username not provided"
+    
+    if add_key(username=username, password=password):
+        return {
+            "username": username,
+            "key": generate_access_key(username=username, userpass=password)
+        }
+    else:
+        return "Error", 500
 
 # endregion
 
@@ -147,12 +169,14 @@ def _send_message():
 def _get_messages():
     source_chat = request.args.get('sender').split(",")
     user_name = request.args.get('receiver')
+    offset = request.args.get('offset')
+    limit = request.args.get('limit', default=20, type=int)
+
     if not user_name:
         return jsonify({"error": "Receiver name is required"}), 400
 
     chat_id = ",".join(sorted([user_name] + source_chat))
-    messages = load_messages(chat_id)
-    return jsonify({ "messages": messages })
+    return jsonify({ "messages": load_messages(chat_id, offset, limit) })
 
 
 @app.route('/uploads/<filename>')

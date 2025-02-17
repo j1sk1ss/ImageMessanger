@@ -1,3 +1,4 @@
+import datetime
 import os
 import json
 
@@ -17,10 +18,12 @@ def save_message(chat_id: str, message_data: dict) -> None:
         json.dump(messages, f, ensure_ascii=False, indent=4)
 
 
-def load_messages(chat_id: str) -> list:
+def load_messages(chat_id: str, offset: int = 0, limit: int = 20) -> list:
     filepath = os.path.join(conf.MESSAGES_DIR, f"{chat_id}.json")
     if not os.path.exists(filepath):
         return []
 
     with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+        all_messages = json.load(f)
+
+    return all_messages[int(offset):int(offset) + int(limit)]
