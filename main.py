@@ -1,6 +1,12 @@
+import json
 import os
 import time
 import tempfile
+
+from messages import (
+    save_message,
+    load_messages
+)
 
 from contacts import (
     get_contacts,
@@ -32,9 +38,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app=app)
 
 
-temp_messages: list = []
-
-
 def require_authorization(f):
     def wrapper(*args, **kwargs):
         auth_key = request.headers.get("Authorization")
@@ -50,7 +53,7 @@ def require_authorization(f):
 # region Main
 
 @app.route('/')
-def index():
+def _index():
     return render_template("index.html")
 
 
@@ -117,25 +120,25 @@ def _send_message():
     receivers = request.form['receiver'].split(",")
     timestamp = time.time()
 
+    chat_id = ",".join(sorted([sender] + receivers))
     image_url = None
     if 'file' in request.files:
         file = request.files['file']
         if file:
-            filename = f"{int(time.time())}_{tempfile.gettempprefix()}"
+            filename = f"{int(timestamp)}_{tempfile.gettempprefix()}"
             filepath = os.path.join('static/uploads/', filename)
             file.save(filepath)
-
             image_url = filepath
 
     send_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
-    temp_messages.append({
+    message_data = {
         'from': sender,
-        'chat': ",".join(sorted([sender] + receivers)),
         'message': encrypted_message,
         'time': send_time,
         'image': image_url
-    })
+    }
 
+    save_message(chat_id, message_data)
     return jsonify({"message": "Message sent successfully", "time": send_time})
 
 
@@ -147,18 +150,14 @@ def _get_messages():
     if not user_name:
         return jsonify({"error": "Receiver name is required"}), 400
 
-    filtered_messages = []
-    for msg in temp_messages:
-        if msg['chat'] == ",".join(sorted([user_name] + source_chat)):
-            filtered_messages.append(msg)
-
-    return jsonify({ "messages": filtered_messages })
+    chat_id = ",".join(sorted([user_name] + source_chat))
+    messages = load_messages(chat_id)
+    return jsonify({ "messages": messages })
 
 
 @app.route('/uploads/<filename>')
 def _send_image(filename):
     return send_from_directory('static/uploads', filename)
-
 
 # endregion
 

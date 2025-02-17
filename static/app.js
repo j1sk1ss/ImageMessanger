@@ -96,6 +96,7 @@ async function openChat(contact) {
     const chat = document.getElementById("chatSection");
     chat.style.display = "block";
     chatMessages.innerHTML = "";
+    fetchMessages();
 }
 
 
@@ -224,47 +225,88 @@ async function removeContact(contact) {
 }
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    function fetchMessages() {
-        const accessKey = localStorage.getItem("access_key");
-        const encryptionKey = document.getElementById('encryptKeyInput').value;
-        const sender = document.getElementById('chatTitle').textContent;
-        const user = localStorage.getItem("username");
-        fetch(`/messages?receiver=${user}&sender=${sender}`, {
-            method: 'GET',
-            headers: {
-                "Authorization": accessKey
-            }
-        }).then(response => response.json())
-          .then(data => {
-              data.messages.forEach(message => {
-                    let imageFile = null;
-                    let msg = "";
+function formatTime(time) {
+    const date = new Date(time);
+    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+}
 
-                    if (message.message) {
-                        msg = decryptMessage(message.message, encryptionKey);
-                    }
 
-                    if (message.image) {
-                        fetch(message.image)
-                            .then(imageResponse => imageResponse.text())
-                            .then(encryptedImage => {
-                                const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
-                                if (decryptedBlob) {
-                                    imageFile = decryptedBlob;
-                                    displayMessage(message.from, msg, message.time, imageFile);
-                                } else {
-                                    console.error("Ошибка при дешифровке изображения");
-                                }
-                            })
-                            .catch(error => console.error("Ошибка при загрузке изображения:", error));
-                    } else {
-                        displayMessage(message.from, msg, message.time, imageFile);
-                    }
-              });
+async function fetchMessages() {
+    const accessKey = localStorage.getItem("access_key");
+    const encryptionKey = document.getElementById('encryptKeyInput').value;
+    const sender = document.getElementById('chatTitle').textContent;
+    const user = localStorage.getItem("username");
+    fetch(`/messages?receiver=${user}&sender=${sender}`, {
+        method: 'GET',
+        headers: {
+            "Authorization": accessKey
+        }
+    }).then(response => response.json())
+      .then(data => {
+          data.messages.forEach(message => {
+                let imageFile = null;
+                let msg = "";
+
+                if (message.message) {
+                    msg = decryptMessage(message.message, encryptionKey);
+                }
+
+                if (message.image) {
+                    fetch(message.image)
+                        .then(imageResponse => imageResponse.text())
+                        .then(encryptedImage => {
+                            const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
+                            if (decryptedBlob) {
+                                imageFile = decryptedBlob;
+                                displayMessage(message.from, msg, message.time, imageFile);
+                            } else {
+                                console.error("Ошибка при дешифровке изображения");
+                            }
+                        })
+                        .catch(error => console.error("Ошибка при загрузке изображения:", error));
+                } else {
+                    displayMessage(message.from, msg, message.time, imageFile);
+                }
           });
+      });
+}
+
+
+function displayMessage(sender, encryptedMessage, time, imageData) {
+    const messageId = `${sender}-${time}`;
+    if (document.getElementById(messageId)) {
+        return;
     }
 
+    const encryptionKey = document.getElementById('encryptKeyInput').value; 
+    const chatMessages = document.getElementById('chatMessages');
+    const messageContainer = document.createElement('div');
+    messageContainer.id = messageId;
+    messageContainer.classList.add('message');
+
+    const header = document.createElement('div');
+    header.classList.add('message-header');
+    header.innerHTML = `<strong>${sender}</strong> <span>${formatTime(time)}</span>`;
+    messageContainer.appendChild(header);
+
+    const messageText = document.createElement('div');
+    messageText.classList.add('message-text');
+    messageText.textContent = encryptedMessage;
+    messageContainer.appendChild(messageText);
+
+    if (imageData) {
+        const messageImage = document.createElement('img');
+        messageImage.src = URL.createObjectURL(imageData);
+        messageImage.classList.add('message-image');
+        messageContainer.appendChild(messageImage);
+    }
+
+    chatMessages.appendChild(messageContainer);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
     setInterval(fetchMessages, 5000);
 
     function sendMessageToServer(encryptedMessage, sender, receiver, imageData) {
@@ -311,44 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
         sendMessageToServer(encryptedMessage, sender, receiver, encryptedImage);
     });
-    
-    function displayMessage(sender, encryptedMessage, time, imageData) {
-        const messageId = `${sender}-${time}`;
-        if (document.getElementById(messageId)) {
-            return;
-        }
-
-        const encryptionKey = document.getElementById('encryptKeyInput').value; 
-        const chatMessages = document.getElementById('chatMessages');
-        const messageContainer = document.createElement('div');
-        messageContainer.id = messageId;
-        messageContainer.classList.add('message');
-    
-        const header = document.createElement('div');
-        header.classList.add('message-header');
-        header.innerHTML = `<strong>${sender}</strong> <span>${formatTime(time)}</span>`;
-        messageContainer.appendChild(header);
-    
-        const messageText = document.createElement('div');
-        messageText.classList.add('message-text');
-        messageText.textContent = encryptedMessage;
-        messageContainer.appendChild(messageText);
-    
-        if (imageData) {
-            const messageImage = document.createElement('img');
-            messageImage.src = URL.createObjectURL(imageData);
-            messageImage.classList.add('message-image');
-            messageContainer.appendChild(messageImage);
-        }
-    
-        chatMessages.appendChild(messageContainer);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    function formatTime(time) {
-        const date = new Date(time);
-        return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-    }    
 
     document.getElementById("imageInput").addEventListener("change", function(event) {
         const file = event.target.files[0];
