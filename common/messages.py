@@ -1,9 +1,11 @@
 import os
 import json
 
+from common.configuration import conf
+
 
 def save_message(chat_id: str, message_data: dict) -> None:
-    filename = os.path.join('static/messages/', f"{chat_id}.json")
+    filename = os.path.join(conf.MESSAGES_DIR, f"{chat_id}.json")
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
             messages = json.load(f)
@@ -16,7 +18,7 @@ def save_message(chat_id: str, message_data: dict) -> None:
 
 
 def load_messages(chat_id: str) -> list:
-    filepath = os.path.join('static/messages/', f"{chat_id}.json")
+    filepath = os.path.join(conf.MESSAGES_DIR, f"{chat_id}.json")
     if not os.path.exists(filepath):
         return []
 

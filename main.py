@@ -1,20 +1,20 @@
-import json
 import os
 import time
 import tempfile
 
-from messages import (
+from common.configuration import conf
+from common.messages import (
     save_message,
     load_messages
 )
 
-from contacts import (
+from common.contacts import (
     get_contacts,
     remove_contact,
     add_contact
 )
 
-from auth import (
+from common.auth import (
     verify_pass,
     generate_access_key,
     verify_access_key
@@ -126,7 +126,7 @@ def _send_message():
         file = request.files['file']
         if file:
             filename = f"{int(timestamp)}_{tempfile.gettempprefix()}"
-            filepath = os.path.join('static/uploads/', filename)
+            filepath = os.path.join(conf.FILES_DIR, filename)
             file.save(filepath)
             image_url = filepath
 
@@ -156,8 +156,8 @@ def _get_messages():
 
 
 @app.route('/uploads/<filename>')
-def _send_image(filename):
-    return send_from_directory('static/uploads', filename)
+def _send_image(filename: str):
+    return send_from_directory(conf.FILES_DIR, filename)
 
 # endregion
 

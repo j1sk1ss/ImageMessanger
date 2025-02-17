@@ -236,49 +236,50 @@ async function fetchMessages() {
     const encryptionKey = document.getElementById('encryptKeyInput').value;
     const sender = document.getElementById('chatTitle').textContent;
     const user = localStorage.getItem("username");
-    fetch(`/messages?receiver=${user}&sender=${sender}`, {
+
+    const response = await fetch(`/messages?receiver=${user}&sender=${sender}`, {
         method: 'GET',
         headers: {
             "Authorization": accessKey
         }
-    }).then(response => response.json())
-      .then(data => {
-          data.messages.forEach(message => {
-                let imageFile = null;
-                let msg = "";
+    });
+    
+    const data = await response.json();
+    for (const message of data.messages) {
+        const messageId = `${message.from}-${message.time}`;
+        if (document.getElementById(messageId)) {
+            continue;
+        }
 
-                if (message.message) {
-                    msg = decryptMessage(message.message, encryptionKey);
-                }
+        let imageFile = null;
+        let msg = "";
 
-                if (message.image) {
-                    fetch(message.image)
-                        .then(imageResponse => imageResponse.text())
-                        .then(encryptedImage => {
-                            const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
-                            if (decryptedBlob) {
-                                imageFile = decryptedBlob;
-                                displayMessage(message.from, msg, message.time, imageFile);
-                            } else {
-                                console.error("Ошибка при дешифровке изображения");
-                            }
-                        })
-                        .catch(error => console.error("Ошибка при загрузке изображения:", error));
+        if (message.message) {
+            msg = decryptMessage(message.message, encryptionKey);
+        }
+
+        if (message.image) {
+            try {
+                const imageResponse = await fetch(message.image);
+                const encryptedImage = await imageResponse.text();
+                const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
+                
+                if (decryptedBlob) {
+                    imageFile = decryptedBlob;
                 } else {
-                    displayMessage(message.from, msg, message.time, imageFile);
+                    console.error("Ошибка при дешифровке изображения");
                 }
-          });
-      });
+            } catch (error) {
+                console.error("Ошибка при загрузке изображения:", error);
+            }
+        }
+
+        displayMessage(messageId, message.from, msg, message.time, imageFile);
+    }
 }
 
 
-function displayMessage(sender, encryptedMessage, time, imageData) {
-    const messageId = `${sender}-${time}`;
-    if (document.getElementById(messageId)) {
-        return;
-    }
-
-    const encryptionKey = document.getElementById('encryptKeyInput').value; 
+function displayMessage(messageId, sender, encryptedMessage, time, imageData) {
     const chatMessages = document.getElementById('chatMessages');
     const messageContainer = document.createElement('div');
     messageContainer.id = messageId;
@@ -330,7 +331,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).then(response => response.json())
           .then(data => {
-              displayMessage(sender, document.getElementById('messageInput').value, data.time, fileData);
+              displayMessage(`${sender}-${data.time}`, sender, document.getElementById('messageInput').value, data.time, fileData);
+              document.getElementById('messageInput').value = "";
           });
     }
     
@@ -339,11 +341,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const sender = localStorage.getItem("username");
         const receiver = document.getElementById('chatTitle').textContent;
         const encryptionKey = document.getElementById('encryptKeyInput').value; 
-        console.log(encryptionKey);
         const encryptedMessage = encryptMessage(message, encryptionKey);
         const fileInput = document.getElementById('imageInput');
         const fileData = fileInput.files[0];
-    
+        
         let encryptedImage = null;
         if (fileData) {
             encryptedImage = await encryptImage(fileData, encryptionKey);

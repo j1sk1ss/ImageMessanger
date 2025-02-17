@@ -2,13 +2,15 @@ import hmac
 import hashlib
 import base64
 
+from common.configuration import conf
+
 
 temp_keys_list: list = []
 
 
 def _load_keys() -> set:
     try:
-        with open("keys.txt", "r") as f:
+        with open(conf.PASSWORDS_FILE, "r") as f:
             return set(line.strip() for line in f.readlines())
     except FileNotFoundError:
         return set()

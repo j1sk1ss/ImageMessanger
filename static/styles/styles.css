@@ -51,8 +51,17 @@ button:hover {
     height: 100vh;
 }
 
-.toggle-contacts {
-    display: none;
+#toggleContacts {
+    font-size: 2rem;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    padding: 10px;
+    color: #333;
 }
 
 .contacts {
@@ -134,43 +143,6 @@ button:hover {
     margin-top: 10px;
 }
 
-/* Стиль для чата */
-.chat {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    background-color: #fff;
-    margin-left: 250px; /* Для смещения чата на право */
-    flex-grow: 1;
-}
-
-.chat-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    height: auto; /* Убираем 100%, чтобы не влиять на общий размер */
-    width: 100%;
-}
-
-.chat-messages {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin-bottom: 20px;
-    height: calc(80vh - 40px); /* 100% от высоты экрана минус отступы */
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.chat-input {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    margin: 0;
-    height: 60px; /* Установите фиксированную высоту для ввода */
-    width: 100%;
-    box-sizing: border-box;
-}
-
 .message-container {
     width: 100%;
 }
@@ -237,10 +209,6 @@ button:hover {
     box-sizing: border-box;
 }
 
-.chat-input input[type="file"] {
-    margin-bottom: 10px;
-}
-
 #sendMessageButton {
     background-color: #4CAF50;
     color: white;
@@ -255,51 +223,8 @@ button:hover {
     gap: 10px;
 }
 
-@media (max-width: 768px) {
-    .toggle-contacts {
-        display: block;
-        position: absolute;
-        top: 5px;
-        right: 10px;
-        font-size: 20px;
-        background: none;
-        border: none;
-        color: #333;
-    }
-
-    .messenger-container {
-        flex-direction: column;
-    }
-
-    .contacts {
-        width: 100%;
-        position: static;
-        box-shadow: none;
-        height: auto;
-        padding: 10px;
+@media (min-width: 768px) {
+    #toggleContacts {
         display: none;
-    }
-
-    .contacts.show {
-        display: block;
-    }
-
-    .chat {
-        margin-left: 0;
-    }
-
-    #addContactInterface {
-        width: 90%;
-        margin-top: 20px;
-    }
-
-    #addContactButton {
-        width: 100%;
-        margin-top: 20px;
-    }
-
-    #contactsList .contact {
-        font-size: 14px;
-        padding: 15px;
     }
 }

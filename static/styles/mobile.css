@@ -1,0 +1,152 @@
+/* Мобильные устройства (ширина экрана до 768px) */
+@media screen and (max-width: 768px) {
+    /* Контейнер мессенджера */
+    .messenger-container {
+        display: block;
+        position: relative;
+    }
+
+
+    /* Контакты */
+    .contacts {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #fff;
+        padding: 1rem;
+        display: none;
+        overflow-y: auto;
+        z-index: 10;
+    }
+
+    .contacts.open {
+        transform: translateX(0);
+    }
+
+    .contacts.closed {
+        transform: translateX(-100%);
+    }
+
+    .toggle-contacts {
+        display: block;
+    }
+
+    /* Кнопка закрытия контактов */
+    .close-contacts-button {
+        font-size: 1.5rem;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 15;
+    }
+
+    /* Чат */
+    .chat {
+        margin-left: 0;
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .chat {
+        display: block;
+    }
+
+    /* Чат на полный экран */
+    .chat.fullscreen {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* Заголовок чата */
+    .chat-header {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Сообщения */
+    .chat-messages {
+        flex-grow: 0;
+        overflow-y: auto;
+        padding: 1rem 0;
+        height: calc(59vh - 5rem);
+    }
+
+    .chat-section {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Поле ввода сообщения */
+    .chat-input {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Действия */
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+    /* Увеличенный размер кнопок */
+    #sendMessageButton {
+        padding: 0.5rem 1rem;
+    }
+
+    /* Размещение кнопки загрузки изображения */
+    .image-upload {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #imagePreview {
+        margin-top: 10px;
+        width: 50px;
+        height: auto;
+    }
+}
+
+/* Мобильные устройства с очень маленьким экраном (до 480px) */
+@media screen and (max-width: 480px) {
+    /* Уменьшение размеров элементов */
+    .messenger-container {
+        padding: 0.5rem;
+    }
+
+    .chat-header {
+        font-size: 1.2rem;
+    }
+
+    #sendMessageButton {
+        padding: 0.4rem 1rem;
+    }
+
+    #toggleContacts {
+        font-size: 1.2rem;
+        margin-left: 0.5rem;
+    }
+
+    .chat-input {
+        width: 100%;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    /* Контакты занимают всю ширину */
+    .contacts {
+        width: 100%;
+    }
+}

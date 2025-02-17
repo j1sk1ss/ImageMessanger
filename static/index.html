@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мессенджер</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles/chat.css">
+    <link rel="stylesheet" href="/static/styles/mobile.css">
+    <link rel="stylesheet" href="/static/styles/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 </head>
 <body>
@@ -15,14 +17,14 @@
     </div>
 
     <div class="messenger-container" id="messengerContainer" style="display: none;">
-        <button id="toggleContacts" class="toggle-contacts">≡</button>
         <aside class="contacts" id="contactsAside">
             <h3>Контакты</h3>
             <ul id="contactsList">
             </ul>
             <button id="addContactButton">Добавить контакт</button>
         </aside>
-
+        <button id="toggleContacts" class="toggle-contacts">≡</button>
+        
         <div id="addContactInterface" style="display: none;">
             <h3>Добавить контакт</h3>
             <input type="text" id="newContactNickname" placeholder="Введите никнейм контакта">

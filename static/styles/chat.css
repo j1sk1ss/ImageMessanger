@@ -1,0 +1,40 @@
+/* Стиль для чата */
+.chat {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #fff;
+    margin-left: 250px; /* Для смещения чата на право */
+    flex-grow: 1;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    height: auto; /* Убираем 100%, чтобы не влиять на общий размер */
+    width: 100%;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    height: calc(80vh - 40px); /* 100% от высоты экрана минус отступы */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.chat-input {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin: 0;
+    height: 60px; /* Установите фиксированную высоту для ввода */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.chat-input input[type="file"] {
+    margin-bottom: 10px;
+}

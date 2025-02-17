@@ -1,26 +1,28 @@
 import json
 
+from common.configuration import conf
 
-def _load_contacts(filename="contacts.json"):
+
+def _load_contacts():
     try:
-        with open(filename, "r") as file:
+        with open(conf.CONTACTS_FILE, "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return []
 
 
-def _save_contacts(contacts, filename="contacts.json"):
-    with open(filename, "w") as file:
+def _save_contacts(contacts):
+    with open(conf.CONTACTS_FILE, "w") as file:
         json.dump(contacts, file, indent=4)
 
 
-def add_contact(username, contact, filename="contacts.json") -> bool:
-    contacts = _load_contacts(filename)
+def add_contact(username, contact) -> bool:
+    contacts = _load_contacts()
     for user in contacts:
         if user["username"] == username:
             if contact not in user["contacts"]:
                 user["contacts"].append(contact)
-                _save_contacts(contacts, filename)
+                _save_contacts(contacts)
                 return True
             else:
                 return False
@@ -31,17 +33,17 @@ def add_contact(username, contact, filename="contacts.json") -> bool:
     }
 
     contacts.append(new_user)
-    _save_contacts(contacts, filename)
+    _save_contacts(contacts)
     return True
 
 
-def remove_contact(username, contact, filename="contacts.json") -> bool:
-    contacts = _load_contacts(filename)
+def remove_contact(username, contact) -> bool:
+    contacts = _load_contacts()
     for user in contacts:
         if user["username"] == username:
             if contact in user["contacts"]:
                 user["contacts"].remove(contact)
-                _save_contacts(contacts, filename)
+                _save_contacts(contacts)
                 return True
             else:
                 return False
@@ -49,8 +51,8 @@ def remove_contact(username, contact, filename="contacts.json") -> bool:
     return False
 
 
-def get_contacts(username, filename="contacts.json"):
-    contacts = _load_contacts(filename)
+def get_contacts(username):
+    contacts = _load_contacts()
     for user in contacts:
         if user["username"] == username:
             return user["contacts"]
