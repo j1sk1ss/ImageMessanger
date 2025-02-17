@@ -2,3 +2,4 @@
 /static/uploads
 *.json
 *.pyc
+*.txt
