@@ -112,7 +112,7 @@ async function loadContacts() {
             li.onclick = () => openChat(contact);
 
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Удалить';
+            deleteButton.textContent = 'Delete';
             deleteButton.onclick = (e) => {
                 e.stopPropagation();
                 removeContact(contact);
@@ -134,12 +134,7 @@ window.addContact = async function () {
     const accessKey = localStorage.getItem("access_key");
 
     if (!contact) {
-        alert("Никнейм не может быть пустым.");
-        return;
-    }
-
-    if (!username || !accessKey) {
-        alert("Ошибка: отсутствуют данные авторизации.");
+        alert("Empty nickname.");
         return;
     }
 
@@ -155,7 +150,7 @@ window.addContact = async function () {
         });
 
         if (!response.ok) {
-            throw new Error(response.message || "Ошибка добавления контакта");
+            throw new Error(response.message || "Add contact error");
         }
 
         loadContacts();
@@ -172,12 +167,7 @@ async function removeContact(contact) {
     const accessKey = localStorage.getItem("access_key");
 
     if (!contact) {
-        alert("Ошибка: отсутствует никнейм контакта.");
-        return;
-    }
-
-    if (!username || !accessKey) {
-        alert("Ошибка: отсутствуют данные авторизации.");
+        alert("Empty nickname.");
         return;
     }
 
@@ -193,7 +183,7 @@ async function removeContact(contact) {
         });
 
         if (!response.ok) {
-            throw new Error(response.message || "Ошибка удаления контакта");
+            throw new Error(response.message || "Delete contact error.");
         }
 
         loadContacts();
@@ -223,7 +213,21 @@ async function openChat(contact) {
 }
 
 
+function updatePaginationButtons(hasNext) {
+    const prevButton = document.getElementById("prevPageButton");
+    const nextButton = document.getElementById("nextPageButton");
+
+    prevButton.disabled = (page === 0);
+    nextButton.disabled = !hasNext;
+
+    prevButton.classList.toggle("disabled-button", page === 0);
+    nextButton.classList.toggle("active-button", hasNext);
+    nextButton.classList.toggle("disabled-button", !hasNext);
+}
+
+
 window.nextPage = async function () {
+    const chatMessages = document.getElementById('chatMessages');
     const images = chatMessages.getElementsByTagName('img');
     for (let image of images) {
         URL.revokeObjectURL(image.src); 
@@ -237,6 +241,7 @@ window.nextPage = async function () {
 
 window.prevPage = async function () {
     if (page > 0) {
+        const chatMessages = document.getElementById('chatMessages');
         const images = chatMessages.getElementsByTagName('img');
         for (let image of images) {
             URL.revokeObjectURL(image.src);
@@ -250,14 +255,15 @@ window.prevPage = async function () {
 
 
 async function fetchMessages() {
-    const accessKey = localStorage.getItem("access_key");
-    const encryptionKey = document.getElementById('encryptKeyInput').value;
-    const sender = document.getElementById('chatTitle').textContent;
-    const user = localStorage.getItem("username");
-
     try {
+        const accessKey = localStorage.getItem("access_key");
+        if (accessKey === "") return;
+
+        const encryptionKey = document.getElementById('encryptKeyInput').value;
+        const sender = document.getElementById('chatTitle').textContent;
+        const user = localStorage.getItem("username");
         const response = await fetch(
-            `/messages?receiver=${user}&sender=${sender}&offset=${7 * page}&limit=7`, 
+            `/messages?receiver=${user}&sender=${sender}&offset=${20 * page}&limit=20`, 
             {
                 method: 'GET',
                 headers: {
@@ -268,7 +274,7 @@ async function fetchMessages() {
         
         const data = await response.json();
         for (const message of data.messages) {
-            const messageId = `${message.from}-${message.time}`;
+            const messageId = `${message.from}${message.time}`;
             if (document.getElementById(messageId)) {
                 continue;
             }
@@ -287,18 +293,16 @@ async function fetchMessages() {
                     const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
                     if (decryptedBlob) {
                         imageFile = decryptedBlob;
-                    } else {
-                        console.error("Ошибка при дешифровке изображения");
                     }
-                } catch (error) {
-                    console.error("Ошибка при загрузке изображения:", error);
-                }
+                } catch (error) { }
             }
 
             displayMessage(messageId, message.from, msg, message.time, imageFile);
         }
+
+        updatePaginationButtons(data.has_next);
     } catch (error) {
-        console.error("Ошибка при загрузке сообщений:", error);
+        
     }
 }
 
@@ -383,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         fileInput.value = '';
         document.getElementById('imagePreview').style.display = "none";
-        document.getElementById("fileNameLabel").textContent = "Загрузить изображение";
+        document.getElementById("fileNameLabel").textContent = "Attachment";
     });
 
     document.getElementById("imageInput").addEventListener("change", function(event) {
@@ -401,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById("fileNameLabel").textContent = fileName;
         } else {
             document.getElementById("imagePreview").style.display = "none";
-            document.getElementById("fileNameLabel").textContent = "Загрузить изображение";
+            document.getElementById("fileNameLabel").textContent = "Attachment";
         }
     });
 });

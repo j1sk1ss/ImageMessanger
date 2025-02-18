@@ -34,6 +34,7 @@ button:hover {
     height: 100vh;
     background-color: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    gap: 10px;
 }
 
 .login-screen input {
@@ -209,6 +210,17 @@ button:hover {
     box-sizing: border-box;
 }
 
+#encryptKeyInput {
+    width: 100%;
+    height: 60px;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    resize: none;
+}
+
 #sendMessageButton {
     background-color: #4CAF50;
     color: white;
@@ -222,6 +234,28 @@ button:hover {
     flex-direction: column;
     gap: 10px;
 }
+
+.pagination-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.disabled-button {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.active-button {
+    background-color: #007bff;
+    cursor: pointer;
+}
+
+.active-button:hover {
+    background-color: #0056b3;
+}
+
 
 @media (min-width: 768px) {
     #toggleContacts {

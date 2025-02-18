@@ -1,7 +1,7 @@
-import hmac
-import hashlib
-import base64
 import os
+import hmac
+import base64
+import hashlib
 
 from common.configuration import conf
 
@@ -23,7 +23,7 @@ def add_key(username: str, password: str) -> bool:
         with open(conf.PASSWORDS_FILE, "r") as f:
             keys = set(line.strip() for line in f if line.strip())
 
-    new_entry = f"{username}:{password}"
+    new_entry = f"{_get_hash(password)}:{username}"
     if new_entry in keys:
         return False
 
@@ -37,18 +37,22 @@ def add_key(username: str, password: str) -> bool:
 def verify_pass(username: str, password: str) -> tuple:
     passwords: set[str] = _load_keys()
     for pswd in passwords:
-        if password == pswd.split(":")[0] and username == pswd.split(":")[1]:
+        if _get_hash(password) == pswd.split(":")[0] and username == pswd.split(":")[1]:
             return pswd.split(":", 2)
     
     return None, None
 
 
 def generate_access_key(username: str, userpass: str) -> str:
-    data = f"{username}:{userpass}".encode()
-    key = hmac.new("сщквуддЫфде".encode(), data, hashlib.sha256).digest()
-    access_key = base64.urlsafe_b64encode(key).decode()
+    access_key = _get_hash(f"{username}:{userpass}")
     temp_keys_list.append(access_key)
     return access_key
+
+
+def _get_hash(userpass: str) -> str:
+    data = userpass.encode()
+    key = hmac.new("сщквуддЫфде".encode(), data, hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(key).decode().replace(":", "")
 
 
 def verify_access_key(key: str) -> bool:

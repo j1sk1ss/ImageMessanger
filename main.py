@@ -62,20 +62,20 @@ def _index():
 def _auth_user():
     data: dict = request.json
     if not data:
-        return 400, "No data provided"
+        return "No data provided", 400
     
     username: str | None = data.get("username", None)
     password: str | None = data.get("password", None)
     if not username or not password:
-        return 400, "Password and username not provided"
+        return "Password and username not provided", 400
     
     login_data: tuple = verify_pass(username=username, password=password)
     if not login_data[0] or not login_data[1]:
-        return 404, "User not found"
+        return "User not found", 404
     
     return {
         "username": login_data[1],
-        "key": generate_access_key(username=login_data[1], userpass=login_data[0])
+        "key": generate_access_key(username=username, userpass=password)
     }
 
 
@@ -176,7 +176,8 @@ def _get_messages():
         return jsonify({"error": "Receiver name is required"}), 400
 
     chat_id = ",".join(sorted([user_name] + source_chat))
-    return jsonify({ "messages": load_messages(chat_id, offset, limit) })
+    messages, has_next = load_messages(chat_id, offset, limit)
+    return jsonify({ "messages": messages, "has_next": has_next })
 
 
 @app.route('/uploads/<filename>')

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мессенджер</title>
+    <title>Messenger</title>
     <link rel="stylesheet" href="/static/styles/chat.css">
     <link rel="stylesheet" href="/static/styles/mobile.css">
     <link rel="stylesheet" href="/static/styles/styles.css">
@@ -14,32 +14,32 @@
 </head>
 <body>
     <div class="login-screen" id="loginScreen">
-        <h2>Вход</h2>
-        <input type="text" id="username" placeholder="Введите имя">
-        <input type="password" id="password" placeholder="Введите пароль">
-        <button id="loginButton" onclick="auth()">Войти</button>
-        <button id="loginButton" onclick="register()">Регистрация</button>
+        <h2>Entry screen</h2>
+        <input type="text" id="username" placeholder="Name">
+        <input type="password" id="password" placeholder="Passsword">
+        <button id="loginButton" onclick="auth()">Enter</button>
+        <button id="loginButton" onclick="register()">Register</button>
     </div>
 
     <div class="messenger-container" id="messengerContainer" style="display: none;">
         <aside class="contacts" id="contactsAside">
-            <h3>Контакты</h3>
+            <h3>Contacts</h3>
             <ul id="contactsList">
             </ul>
-            <button id="addContactButton">Добавить контакт</button>
+            <button id="addContactButton">Add contact</button>
         </aside>
         <button id="toggleContacts" class="toggle-contacts">≡</button>
         
         <div id="addContactInterface" style="display: none;">
-            <h3>Добавить контакт</h3>
-            <input type="text" id="newContactNickname" placeholder="Введите никнейм контакта">
-            <button id="confirmAddContactButton" onclick="addContact()">Добавить</button>
-            <button id="cancelAddContactButton">Отмена</button>
+            <h3>Add contact</h3>
+            <input type="text" id="newContactNickname" placeholder="Contact name">
+            <button id="confirmAddContactButton" onclick="addContact()">Add</button>
+            <button id="cancelAddContactButton">Cancel</button>
         </div>
 
         <section class="chat" id="chatSection">
             <div class="chat-header">
-                <h3 id="chatTitle">Выберите контакт</h3>
+                <h3 id="chatTitle">Choose contact</h3>
             </div>
 
             <div class="chat-messages" id="chatMessages">
@@ -47,18 +47,18 @@
 
             <div class="chat-input">
                 <div class="message-container">
-                    <textarea id="messageInput" placeholder="Введите сообщение"></textarea>
+                    <textarea id="messageInput" placeholder="Message"></textarea>
                 </div>
                 <div class="encryption-input">
-                    <input type="text" id="encryptKeyInput" placeholder="Введите код шифрования">
+                    <input type="text" id="encryptKeyInput" placeholder="Encryption">
                 </div>
                 <div class="actions">
                     <div class="image-upload">
                         <input type="file" id="imageInput" accept="image/*">
-                        <label for="imageInput" class="upload-button" id="fileNameLabel">Загрузить изображение</label>
+                        <label for="imageInput" class="upload-button" id="fileNameLabel">Attachment</label>
                         <img id="imagePreview" src="" alt="MiniPhoto" style="display:none; width: 50px; height: auto; margin-top: 10px;">
                     </div>                    
-                    <button id="sendMessageButton" class="send-button">Отправить</button>
+                    <button id="sendMessageButton" class="send-button">Send</button>
                     <div class="pagination-buttons">
                         <button id="prevPageButton" onclick="prevPage()">←</button>
                         <button id="nextPageButton" onclick="nextPage()">→</button>
@@ -96,9 +96,14 @@
             const toggleContactsButton = document.getElementById("toggleContacts");
             if (toggleContactsButton) {
                 toggleContactsButton.addEventListener("click", toggleContacts);
-            } else {
-                console.error("Не найден элемент с ID 'toggleContacts'");
             }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    document.getElementById("sendMessageButton").click();
+                }
+            });
 
             toggleContacts();
         });

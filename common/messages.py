@@ -18,12 +18,12 @@ def save_message(chat_id: str, message_data: dict) -> None:
         json.dump(messages, f, ensure_ascii=False, indent=4)
 
 
-def load_messages(chat_id: str, offset: int = 0, limit: int = 20) -> list:
+def load_messages(chat_id: str, offset: int = 0, limit: int = 20) -> tuple[list, bool]:
     filepath = os.path.join(conf.MESSAGES_DIR, f"{chat_id}.json")
     if not os.path.exists(filepath):
-        return []
+        return [], False
 
     with open(filepath, "r", encoding="utf-8") as f:
         all_messages = json.load(f)
 
-    return all_messages[int(offset):int(offset) + int(limit)]
+    return all_messages[int(offset):int(offset) + int(limit)], len(all_messages) > int(offset) + int(limit)
