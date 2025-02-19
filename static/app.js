@@ -1,16 +1,62 @@
 import { encryptMessage, decryptMessage, encryptImage, decryptImage } from './utils/crypto.js';
-import { formatTime } from './utils/date.js';
+import { fetchMessages, displayMessage } from './utils/common.js';
+
+
+let socket = null;
+
+
+function connectToSocket() {
+    socket = io();
+    socket.on('connect', function() {
+        console.log("WebSocket connected");
+        socket.emit('join', {
+            username: localStorage.getItem("username")
+        });
+    });
+
+    socket.on('new_message', async function(data) {
+        const receiver = document.getElementById('chatTitle').textContent;
+        if (receiver !== data.from) return;
+    
+        const encryptionKey = document.getElementById('encryptKeyInput').value;
+        let msg = "";
+        if (data.message) {
+            msg = decryptMessage(data.message, encryptionKey);
+        }
+    
+        let imageFile = null;
+        if (data.image) {
+            try {
+                const imageResponse  = await fetch(data.image);
+                const encryptedImage = await imageResponse.text();
+                imageFile = decryptImage(encryptedImage, encryptionKey);
+            } catch (error) {
+                console.error("Ошибка при загрузке изображения", error);
+            }
+        }
+    
+        displayMessage(data.from, msg, data.time, imageFile);
+    });    
+
+    socket.on('new_contact', function(data) {
+        console.log("New contact:", data.contact);
+        loadContacts();
+    });
+
+    socket.on('disconnect', function() {
+        console.log("WebSocket disabled");
+    });
+}
 
 
 window.auth = async function () {
-    const loginScreen = document.getElementById("loginScreen");
+    const loginScreen        = document.getElementById("loginScreen");
     const messengerContainer = document.getElementById("messengerContainer");
-    const usernameInput = document.getElementById("username");
-    const username = usernameInput.value.trim();
-    const passwordInput = document.getElementById("password");
-    const password = passwordInput.value.trim();
+    const usernameInput      = document.getElementById("username");
+    const username           = usernameInput.value.trim();
+    const passwordInput      = document.getElementById("password");
+    const password           = passwordInput.value.trim();
     if (password === "" || username === "") {
-        alert("Введите пароль и имя!");
         return;
     }
 
@@ -23,7 +69,7 @@ window.auth = async function () {
 
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || "Ошибка авторизации");
+            throw new Error(data.message || "Auth error");
         }
 
         const access_key = data.key;
@@ -34,6 +80,7 @@ window.auth = async function () {
         messengerContainer.style.display = "flex";
 
         loadContacts();
+        connectToSocket();
     } catch (error) {
         alert(error.message);
     }
@@ -41,14 +88,13 @@ window.auth = async function () {
 
 
 window.register = async function () {
-    const loginScreen = document.getElementById("loginScreen");
+    const loginScreen        = document.getElementById("loginScreen");
     const messengerContainer = document.getElementById("messengerContainer");
-    const usernameInput = document.getElementById("username");
-    const username = usernameInput.value.trim();
-    const passwordInput = document.getElementById("password");
-    const password = passwordInput.value.trim();
+    const usernameInput      = document.getElementById("username");
+    const username           = usernameInput.value.trim();
+    const passwordInput      = document.getElementById("password");
+    const password           = passwordInput.value.trim();
     if (password === "" || username === "") {
-        alert("Введите пароль и имя!");
         return;
     }
 
@@ -61,7 +107,7 @@ window.register = async function () {
 
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || "Ошибка авторизации");
+            throw new Error(data.message || "Register error");
         }
 
         const access_key = data.key;
@@ -72,17 +118,55 @@ window.register = async function () {
         messengerContainer.style.display = "flex";
 
         loadContacts();
+        connectToSocket();
     } catch (error) {
         alert(error.message);
     }
 }
 
 
+function sendMessage(receiver, message, file = null) {
+    const data = {
+        sender: localStorage.getItem("username"),
+        receiver: receiver,
+        message: message,
+        image: null
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/uploads', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(respData => {
+                if (respData.file_path) {
+                    data.image = respData.file_path;
+                    socket.emit('send_message', data);
+                } else {
+                    console.log("Loading error");
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        socket.emit('send_message', data);
+    }
+}
+
+
 async function loadContacts() {
-    const username = localStorage.getItem("username");
+    const username  = localStorage.getItem("username");
     const accessKey = localStorage.getItem("access_key");
     if (!username || !accessKey) {
-        alert("Ошибка: отсутствуют данные авторизации.");
         return;
     }
 
@@ -98,7 +182,7 @@ async function loadContacts() {
 
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || "Ошибка загрузки контактов");
+            throw new Error(data.message || "Load contacts error");
         }
 
         const contactsList = document.getElementById("contactsList");
@@ -129,12 +213,10 @@ async function loadContacts() {
 
 
 window.addContact = async function () {
-    const contact = document.getElementById("newContactNickname").value;
-    const username = localStorage.getItem("username");
+    const contact   = document.getElementById("newContactNickname").value;
+    const username  = localStorage.getItem("username");
     const accessKey = localStorage.getItem("access_key");
-
     if (!contact) {
-        alert("Empty nickname.");
         return;
     }
 
@@ -163,7 +245,7 @@ window.addContact = async function () {
 
 
 async function removeContact(contact) {
-    const username = localStorage.getItem("username");
+    const username  = localStorage.getItem("username");
     const accessKey = localStorage.getItem("access_key");
 
     if (!contact) {
@@ -209,20 +291,7 @@ async function openChat(contact) {
     }
     
     chatMessages.innerHTML = "";
-    fetchMessages();
-}
-
-
-function updatePaginationButtons(hasNext) {
-    const prevButton = document.getElementById("prevPageButton");
-    const nextButton = document.getElementById("nextPageButton");
-
-    prevButton.disabled = (page === 0);
-    nextButton.disabled = !hasNext;
-
-    prevButton.classList.toggle("disabled-button", page === 0);
-    nextButton.classList.toggle("active-button", hasNext);
-    nextButton.classList.toggle("disabled-button", !hasNext);
+    fetchMessages(page);
 }
 
 
@@ -235,7 +304,7 @@ window.nextPage = async function () {
 
     page++;
     chatMessages.innerHTML = "";
-    fetchMessages();
+    fetchMessages(page);
 }
 
 
@@ -249,132 +318,19 @@ window.prevPage = async function () {
 
         page--;
         chatMessages.innerHTML = "";
-        fetchMessages();
+        fetchMessages(page);
     }
-}
-
-
-async function fetchMessages() {
-    try {
-        const accessKey = localStorage.getItem("access_key");
-        if (accessKey === "") return;
-
-        const encryptionKey = document.getElementById('encryptKeyInput').value;
-        const sender = document.getElementById('chatTitle').textContent;
-        const user = localStorage.getItem("username");
-        const response = await fetch(
-            `/messages?receiver=${user}&sender=${sender}&offset=${20 * page}&limit=20`, 
-            {
-                method: 'GET',
-                headers: {
-                    "Authorization": accessKey
-                }
-            }
-        );
-        
-        const data = await response.json();
-        for (const message of data.messages) {
-            const messageId = `${message.from}${message.time}`;
-            if (document.getElementById(messageId)) {
-                continue;
-            }
-
-            let imageFile = null;
-            let msg = "";
-
-            if (message.message) {
-                msg = decryptMessage(message.message, encryptionKey);
-            }
-
-            if (message.image) {
-                try {
-                    const imageResponse = await fetch(message.image);
-                    const encryptedImage = await imageResponse.text();
-                    const decryptedBlob = decryptImage(encryptedImage, encryptionKey);
-                    if (decryptedBlob) {
-                        imageFile = decryptedBlob;
-                    }
-                } catch (error) { }
-            }
-
-            displayMessage(messageId, message.from, msg, message.time, imageFile);
-        }
-
-        updatePaginationButtons(data.has_next);
-    } catch (error) {
-        
-    }
-}
-
-
-function displayMessage(messageId, sender, encryptedMessage, time, imageData) {
-    const chatMessages = document.getElementById('chatMessages');
-    const messageContainer = document.createElement('div');
-    messageContainer.id = messageId;
-    messageContainer.classList.add('message');
-
-    const header = document.createElement('div');
-    header.classList.add('message-header');
-    header.innerHTML = `<strong>${sender}</strong> <span>${formatTime(time)}</span>`;
-    messageContainer.appendChild(header);
-
-    const messageText = document.createElement('div');
-    messageText.classList.add('message-text');
-    messageText.textContent = encryptedMessage;
-    messageContainer.appendChild(messageText);
-
-    if (imageData) {
-        const messageImage = document.createElement('img');
-        messageImage.src = URL.createObjectURL(imageData);
-        messageImage.classList.add('message-image');
-        messageContainer.appendChild(messageImage);
-        messageImage.onload = () => {
-            URL.revokeObjectURL(messageImage.src);
-        };
-    }
-
-    chatMessages.appendChild(messageContainer);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    setInterval(fetchMessages, 2500);
-
-    function sendMessageToServer(encryptedMessage, sender, receiver, imageData) {
-        const accessKey = localStorage.getItem("access_key");
-        const formData = new FormData();
-        formData.append('message', encryptedMessage);
-        formData.append('sender', sender);
-        formData.append('receiver', receiver);
-        if (imageData) {
-            formData.append('file', imageData);
-        }
-    
-        const fileInput = document.getElementById('imageInput');
-        const fileData = fileInput.files[0];
-
-        fetch('/messages', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                "Authorization": accessKey
-            }
-        }).then(response => response.json())
-          .then(data => {
-              displayMessage(`${sender}-${data.time}`, sender, document.getElementById('messageInput').value, data.time, fileData);
-              document.getElementById('messageInput').value = "";
-          });
-    }
-    
     document.getElementById('sendMessageButton').addEventListener('click', async function() {
-        const message = document.getElementById('messageInput').value;
-        const sender = localStorage.getItem("username");
-        const receiver = document.getElementById('chatTitle').textContent;
-        const encryptionKey = document.getElementById('encryptKeyInput').value; 
+        const message          = document.getElementById('messageInput').value;
+        const receiver         = document.getElementById('chatTitle').textContent;
+        const encryptionKey    = document.getElementById('encryptKeyInput').value; 
         const encryptedMessage = encryptMessage(message, encryptionKey);
-        const fileInput = document.getElementById('imageInput');
-        const fileData = fileInput.files[0];
+        const fileInput        = document.getElementById('imageInput');
+        const fileData         = fileInput.files[0];
         
         let encryptedImage = null;
         if (fileData) {
@@ -383,7 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
             encryptedImage = new File([imageBlob], "encrypted_image.jpg");
         }
     
-        sendMessageToServer(encryptedMessage, sender, receiver, encryptedImage);
+        sendMessage(receiver, encryptedMessage, encryptedImage);
+        displayMessage(localStorage.getItem("username"), document.getElementById('messageInput').value, null, fileData);
+        document.getElementById('messageInput').value = "";
         
         fileInput.value = '';
         document.getElementById('imagePreview').style.display = "none";
@@ -392,7 +350,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById("imageInput").addEventListener("change", function(event) {
         const file = event.target.files[0];
-        
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {

@@ -13,11 +13,11 @@ export function decryptMessage(encryptedMessage, key) {
         if (decryptedMessage) {
             return decryptedMessage;
         } else {
-            return "Ошибка дешифровки";
+            return "";
         }
     } catch (error) {
         console.error("Ошибка дешифровки:", error);
-        return "Ошибка дешифровки";
+        return "";
     }
 }
 

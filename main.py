@@ -1,7 +1,8 @@
 import os
 import time
-import tempfile
+import uuid
 
+from werkzeug.utils import secure_filename
 from common.configuration import conf
 from common.messages import (
     save_message,
@@ -22,7 +23,12 @@ from common.auth import (
 )
 
 from flask_cors import CORS
-from flask_socketio import SocketIO
+from flask_socketio import (
+    SocketIO, 
+    emit, 
+    join_room
+)
+
 from flask import (
     Flask, 
     jsonify, 
@@ -30,6 +36,7 @@ from flask import (
     request,
     send_from_directory
 )
+
 
 # region Setup
 
@@ -50,6 +57,31 @@ def require_authorization(f):
     return wrapper
 
 # endregion
+
+# region Sockets
+
+users: dict = {} 
+chats: dict = {}
+
+@socketio.on('connect')
+def handle_connect():
+    print(f"Client connected: {request.sid}")
+
+@socketio.on('join')
+def handle_join(data):
+    username = data['username']
+    users[username] = request.sid
+    join_room(request.sid)
+    print(f"{username} connected to {request.sid}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f"Cliend disconnected: {request.sid}")
+    global users
+    users = {user: sid for user, sid in users.items() if sid != request.sid} 
+
+# endregion
+
 
 # region Main
 
@@ -114,10 +146,16 @@ def _get_contacts_list():
 def _add_contact():
     username: str = request.headers.get("X-Username")
     new_contact: str = request.json["contact"]
+
     if add_contact(username=username, contact=new_contact):
-        return "Add success", 200
-    else:
-        return "Add error", 500
+        if add_contact(username=new_contact, contact=username):
+            if new_contact in users:
+                print(users, new_contact)
+                socketio.emit('new_contact', {'contact': username}, room=users[new_contact])
+
+            return "Add success", 200
+    
+    return "Add error", 500
 
 
 @app.route('/contacts', methods=['DELETE'])
@@ -134,34 +172,25 @@ def _remove_contact():
 
 # region Messages
 
-@app.route('/messages', methods=['POST'])
-@require_authorization
-def _send_message():
-    encrypted_message = request.form['message']
-    sender = request.form['sender']
-    receivers = request.form['receiver'].split(",")
-    timestamp = time.time()
+@socketio.on('send_message')
+def handle_send_message(data: dict):
+    print(data)
+    sender = data.get("sender")
+    receivers = data.get("receiver", "").split(",")
 
     chat_id = ",".join(sorted([sender] + receivers))
-    image_url = None
-    if 'file' in request.files:
-        file = request.files['file']
-        if file:
-            filename = f"{int(timestamp)}_{tempfile.gettempprefix()}"
-            filepath = os.path.join(conf.FILES_DIR, filename)
-            file.save(filepath)
-            image_url = filepath
-
-    send_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
     message_data = {
         'from': sender,
-        'message': encrypted_message,
-        'time': send_time,
-        'image': image_url
+        'message': data['message'],
+        'time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())),
+        'image': data.get("image", None),
+        'read': False
     }
 
     save_message(chat_id, message_data)
-    return jsonify({"message": "Message sent successfully", "time": send_time})
+    for receiver in receivers:
+        if receiver in users:
+            emit('new_message', message_data, room=users[receiver])
 
 
 @app.route('/messages', methods=['GET'])
@@ -180,7 +209,25 @@ def _get_messages():
     return jsonify({ "messages": messages, "has_next": has_next })
 
 
-@app.route('/uploads/<filename>')
+@app.route('/uploads', methods=['POST'])
+def _save_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    filename = secure_filename(file.filename)
+    unique_filename = str(uuid.uuid4()) + os.path.splitext(filename)[1]
+    file_path = os.path.join('static\\data\\uploads', unique_filename)
+
+    file.save(file_path)
+    return jsonify({'file_path': file_path}), 200
+
+
+@app.route('/uploads/<filename>', methods=['GET'])
 def _send_image(filename: str):
     return send_from_directory(conf.FILES_DIR, filename)
 
