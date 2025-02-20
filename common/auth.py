@@ -20,8 +20,9 @@ def _load_keys() -> set:
 def give_name_by_phone(phone: str) -> str | None:
     entries: set = _load_keys()
     for entry in entries:
-        if entry[2] == phone:
-            return entry[1]
+        _, name, _phone = entry.split(":")
+        if _phone == phone:
+            return name
 
     return None
 
@@ -29,9 +30,10 @@ def give_name_by_phone(phone: str) -> str | None:
 def user_exists(username: str | None, phone: str | None) -> int:
     entries: set = _load_keys()
     for entry in entries:
-        if entry[1] == username:
+        _, name, _phone = entry.split(":")
+        if name == username:
             return 1
-        if entry[2] == phone:
+        if _phone == phone:
             return 2
 
     return 0

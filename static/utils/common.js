@@ -16,7 +16,7 @@ export function updatePaginationButtons(hasNext, page) {
 
 
 export function displayMessage(sender, message, time, imageData) {
-    const chatMessages     = document.getElementById('chatMessages');
+    const chatMessages = document.getElementById('chatMessages');
     const messageContainer = document.createElement('div');
     messageContainer.classList.add('message');
 
@@ -32,12 +32,17 @@ export function displayMessage(sender, message, time, imageData) {
 
     if (imageData) {
         const messageImage = document.createElement('img');
-        messageImage.src = URL.createObjectURL(imageData);
+        const imageUrl = URL.createObjectURL(imageData);
+
+        messageImage.src = imageUrl;
         messageImage.classList.add('message-image');
-        messageContainer.appendChild(messageImage);
-        messageImage.onload = () => {
-            URL.revokeObjectURL(messageImage.src);
+        messageImage.style.cursor = 'pointer';
+        
+        messageImage.onclick = () => {
+            const newTab = window.open(imageUrl, '_blank');
         };
+
+        messageContainer.appendChild(messageImage);
     }
 
     chatMessages.appendChild(messageContainer);

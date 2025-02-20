@@ -227,7 +227,7 @@ def _save_image():
 
     filename = secure_filename(file.filename)
     unique_filename = str(uuid.uuid4()) + os.path.splitext(filename)[1]
-    file_path = os.path.join('static\\data\\uploads', unique_filename)
+    file_path = os.path.join(conf.FILES_DIR, unique_filename)
 
     file.save(file_path)
     return jsonify({'file_path': file_path}), 200

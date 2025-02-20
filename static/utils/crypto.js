@@ -6,7 +6,7 @@ export function encryptMessage(message, key) {
 export function decryptMessage(encryptedMessage, key) {
     try {
         if (!encryptedMessage) {
-            return "Нет сообщения для дешифровки";
+            return "";
         }
 
         const decryptedMessage = CryptoJS.AES.decrypt(encryptedMessage, key).toString(CryptoJS.enc.Utf8);
