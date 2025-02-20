@@ -1,6 +1,7 @@
 import json
 
 from common.configuration import conf
+from common.auth import user_exists, give_name_by_phone
 
 
 def _load_contacts():
@@ -16,7 +17,14 @@ def _save_contacts(contacts):
         json.dump(contacts, file, indent=4)
 
 
-def add_contact(username, contact) -> bool:
+def add_contact(username: str, contact: str) -> bool:
+    contact_res: int = user_exists(contact, contact)
+    if contact_res == 0:
+        return False
+    
+    if contact_res == 2:
+        contact = give_name_by_phone(contact)
+
     contacts = _load_contacts()
     for user in contacts:
         if user["username"] == username:

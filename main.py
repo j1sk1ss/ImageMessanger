@@ -58,6 +58,7 @@ def require_authorization(f):
 
 # endregion
 
+
 # region Sockets
 
 users: dict = {} 
@@ -67,12 +68,14 @@ chats: dict = {}
 def handle_connect():
     print(f"Client connected: {request.sid}")
 
+
 @socketio.on('join')
 def handle_join(data):
     username = data['username']
     users[username] = request.sid
     join_room(request.sid)
     print(f"{username} connected to {request.sid}")
+
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -119,10 +122,11 @@ def _register_user():
     
     username: str | None = data.get("username", None)
     password: str | None = data.get("password", None)
-    if not username or not password:
+    phone: str | None = data.get("phone", None)
+    if not username or not password or not phone:
         return 400, "Password and username not provided"
     
-    if add_key(username=username, password=password):
+    if add_key(username=username, password=password, phone=phone):
         return {
             "username": username,
             "key": generate_access_key(username=username, userpass=password)
@@ -131,6 +135,7 @@ def _register_user():
         return "Error", 500
 
 # endregion
+
 
 # region Contacts
 
@@ -169,6 +174,7 @@ def _remove_contact():
         return "Delete error", 500
 
 # endregion
+
 
 # region Messages
 
@@ -232,6 +238,7 @@ def _send_image(filename: str):
     return send_from_directory(conf.FILES_DIR, filename)
 
 # endregion
+
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

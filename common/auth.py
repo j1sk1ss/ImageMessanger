@@ -17,13 +17,33 @@ def _load_keys() -> set:
         return set()
     
 
-def add_key(username: str, password: str) -> bool:
+def give_name_by_phone(phone: str) -> str | None:
+    entries: set = _load_keys()
+    for entry in entries:
+        if entry[2] == phone:
+            return entry[1]
+
+    return None
+
+
+def user_exists(username: str | None, phone: str | None) -> int:
+    entries: set = _load_keys()
+    for entry in entries:
+        if entry[1] == username:
+            return 1
+        if entry[2] == phone:
+            return 2
+
+    return 0
+
+
+def add_key(username: str, password: str, phone: str) -> bool:
     keys = set()
     if os.path.exists(conf.PASSWORDS_FILE):
         with open(conf.PASSWORDS_FILE, "r") as f:
             keys = set(line.strip() for line in f if line.strip())
 
-    new_entry = f"{_get_hash(password)}:{username}"
+    new_entry = f"{_get_hash(password)}:{username}:{phone}"
     if new_entry in keys:
         return False
 

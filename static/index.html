@@ -20,6 +20,7 @@
     <div class="login-screen" id="loginScreen">
         <h2>Entry screen</h2>
         <input type="text" id="username" placeholder="Name">
+        <input type="text" id="phone" placeholder="Phone">
         <input type="password" id="password" placeholder="Passsword">
         <button id="loginButton" onclick="auth()">Enter</button>
         <button id="loginButton" onclick="register()">Register</button>
@@ -36,7 +37,7 @@
         
         <div id="addContactInterface" style="display: none;">
             <h3>Add contact</h3>
-            <input type="text" id="newContactNickname" placeholder="Contact name">
+            <input type="text" id="newContactNickname" placeholder="Name or phone">
             <button id="confirmAddContactButton" onclick="addContact()">Add</button>
             <button id="cancelAddContactButton">Cancel</button>
         </div>

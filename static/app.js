@@ -90,11 +90,11 @@ window.auth = async function () {
 window.register = async function () {
     const loginScreen        = document.getElementById("loginScreen");
     const messengerContainer = document.getElementById("messengerContainer");
-    const usernameInput      = document.getElementById("username");
-    const username           = usernameInput.value.trim();
-    const passwordInput      = document.getElementById("password");
-    const password           = passwordInput.value.trim();
-    if (password === "" || username === "") {
+
+    const phone    = document.getElementById("phone").value.trim();
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    if (password === "" || username === "" || phone === "") {
         return;
     }
 
@@ -102,7 +102,7 @@ window.register = async function () {
         const response = await fetch("/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password:password, username:username })
+            body: JSON.stringify({ password:password, username:username, phone:phone })
         });
 
         const data = await response.json();
